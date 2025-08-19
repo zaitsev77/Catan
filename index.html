@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Number Counter App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .buttons-section {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .number-group {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #fafafa;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .number-group:hover {
+            background-color: #e8f5e8;
+            border-color: #4CAF50;
+            transform: translateY(-2px);
+        }
+
+        .number-group:active {
+            transform: translateY(0);
+            background-color: #d4edda;
+        }
+
+        .number-label {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+            pointer-events: none;
+            line-height: 1;
+        }
+
+        .count-display {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2196F3;
+            margin-bottom: 8px;
+            min-height: 25px;
+            pointer-events: none;
+        }
+
+        .remove-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 24px;
+            height: 24px;
+            border: none;
+            border-radius: 50%;
+            background-color: #f44336;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .remove-btn:hover {
+            background-color: #da190b;
+            transform: scale(1.1);
+        }
+
+        .remove-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .controls {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .clear-btn {
+            background-color: #ff9800;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .clear-btn:hover {
+            background-color: #e68900;
+        }
+
+        .charts-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .chart-container {
+            background-color: #fafafa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .chart-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+            color: #333;
+        }
+
+        .histogram {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            height: 200px;
+            border-bottom: 2px solid #333;
+            border-left: 2px solid #333;
+            padding: 10px;
+            background-color: white;
+        }
+
+        .bar {
+            background-color: #2196F3;
+            width: 20px;
+            min-height: 2px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .bar-value {
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+
+        .bar-label {
+            margin-top: 5px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .sequence-chart {
+            height: 250px;
+            border: 2px solid #333;
+            background-color: white;
+            overflow-x: auto;
+            overflow-y: hidden;
+            position: relative;
+        }
+
+        .sequence-chart::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .sequence-chart::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .sequence-chart::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        .sequence-chart::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        .sequence-container {
+            position: relative;
+            height: 210px;
+            padding: 10px;
+            padding-left: 40px;
+        }
+
+        .sequence-content {
+            position: absolute;
+            top: 10px;
+            left: 40px;
+            height: 210px;
+            min-width: 800px; /* Fixed minimum width */
+        }
+
+        .sequence-point {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 9px;
+            font-weight: bold;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: all 0.2s ease;
+        }
+
+        .sequence-point:hover {
+            transform: scale(1.2);
+            z-index: 10;
+        }
+
+        .sequence-empty {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #666;
+            font-style: italic;
+            white-space: nowrap;
+        }
+
+        .y-axis-labels {
+            position: absolute;
+            left: 0;
+            top: 10px;
+            height: 210px;
+            width: 35px;
+            display: flex;
+            flex-direction: column-reverse;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 5;
+            background-color: white;
+            border-right: 1px solid #ddd;
+        }
+
+        .y-label {
+            font-size: 10px;
+            font-weight: bold;
+            color: #666;
+            line-height: 1;
+        }
+
+        .sequence-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+        }
+
+        .grid-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background-color: #eee;
+        }
+
+        @media (max-width: 768px) {
+            .buttons-section {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Catan Roll Tracker</h1>
+        
+        <div class="buttons-section" id="buttonsSection">
+            <!-- Buttons will be generated by JavaScript -->
+        </div>
+
+        <div class="controls">
+            <button class="clear-btn" onclick="clearAll()">Clear All</button>
+        </div>
+
+        <div class="charts-section">
+            <div class="chart-container">
+                <div class="chart-title">Histogram - Total Occurrences</div>
+                <div class="histogram" id="histogram">
+                    <!-- Histogram bars will be generated by JavaScript -->
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-title">Sequence - Press Order (Time →, Value ↑)</div>
+                <div class="sequence-chart" id="sequenceChart">
+                    <div class="sequence-empty">No presses yet</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data storage
+        let counts = {};
+        let sequence = [];
+        const colors = [
+            '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
+            '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9',
+            '#F8C471', '#82E0AA'
+        ];
+
+        // Initialize data for numbers 2-12
+        for (let i = 2; i <= 12; i++) {
+            counts[i] = 0;
+        }
+
+        // Generate buttons
+        function generateButtons() {
+            const buttonsSection = document.getElementById('buttonsSection');
+            
+            for (let i = 2; i <= 12; i++) {
+                const numberGroup = document.createElement('div');
+                numberGroup.className = 'number-group';
+                numberGroup.onclick = () => addCount(i);
+                
+                numberGroup.innerHTML = `
+                    <div class="number-label">${i}</div>
+                    <div class="count-display" id="count-${i}">0</div>
+                    <button class="remove-btn" id="remove-${i}" onclick="event.stopPropagation(); removeCount(${i})" disabled>−</button>
+                `;
+                
+                buttonsSection.appendChild(numberGroup);
+            }
+        }
+
+        // Add count function
+        function addCount(number) {
+            counts[number]++;
+            sequence.push(number);
+            updateDisplay();
+        }
+
+        // Remove count function
+        function removeCount(number) {
+            if (counts[number] > 0) {
+                counts[number]--;
+                // Remove the most recent occurrence from sequence
+                for (let i = sequence.length - 1; i >= 0; i--) {
+                    if (sequence[i] === number) {
+                        sequence.splice(i, 1);
+                        break;
+                    }
+                }
+                updateDisplay();
+            }
+        }
+
+        // Clear all data
+        function clearAll() {
+            for (let i = 2; i <= 12; i++) {
+                counts[i] = 0;
+            }
+            sequence = [];
+            updateDisplay();
+        }
+
+        // Update all displays
+        function updateDisplay() {
+            updateCountDisplays();
+            updateHistogram();
+            updateSequenceChart();
+        }
+
+        // Update count displays and button states
+        function updateCountDisplays() {
+            for (let i = 2; i <= 12; i++) {
+                document.getElementById(`count-${i}`).textContent = counts[i];
+                document.getElementById(`remove-${i}`).disabled = counts[i] === 0;
+            }
+        }
+
+        // Update histogram
+        function updateHistogram() {
+            const histogram = document.getElementById('histogram');
+            histogram.innerHTML = '';
+            
+            const maxCount = Math.max(...Object.values(counts), 1);
+            
+            for (let i = 2; i <= 12; i++) {
+                const barContainer = document.createElement('div');
+                barContainer.style.display = 'flex';
+                barContainer.style.flexDirection = 'column';
+                barContainer.style.alignItems = 'center';
+                barContainer.style.height = '100%';
+                barContainer.style.justifyContent = 'flex-end';
+                
+                const bar = document.createElement('div');
+                bar.className = 'bar';
+                bar.style.backgroundColor = colors[i - 2];
+                bar.style.height = `${(counts[i] / maxCount) * 180}px`;
+                
+                if (counts[i] > 0) {
+                    const barValue = document.createElement('div');
+                    barValue.className = 'bar-value';
+                    barValue.textContent = counts[i];
+                    bar.appendChild(barValue);
+                }
+                
+                const barLabel = document.createElement('div');
+                barLabel.className = 'bar-label';
+                barLabel.textContent = i;
+                
+                barContainer.appendChild(bar);
+                barContainer.appendChild(barLabel);
+                histogram.appendChild(barContainer);
+            }
+        }
+
+        // Update sequence chart
+        function updateSequenceChart() {
+            const sequenceChart = document.getElementById('sequenceChart');
+            
+            if (sequence.length === 0) {
+                sequenceChart.innerHTML = '<div class="sequence-container"><div class="sequence-empty">No presses yet</div></div>';
+                return;
+            }
+            
+            // Create the main container
+            const sequenceContainer = document.createElement('div');
+            sequenceContainer.className = 'sequence-container';
+            
+            // Add Y-axis labels (2-12 only)
+            const yAxisLabels = document.createElement('div');
+            yAxisLabels.className = 'y-axis-labels';
+            for (let i = 2; i <= 12; i++) {
+                const label = document.createElement('div');
+                label.className = 'y-label';
+                label.textContent = i;
+                yAxisLabels.appendChild(label);
+            }
+            sequenceContainer.appendChild(yAxisLabels);
+            
+            // Create the content container with proper width calculation
+            const sequenceContent = document.createElement('div');
+            sequenceContent.className = 'sequence-content';
+            
+            // Calculate required width based on number of points
+            const pointSpacing = 25;
+            const contentWidth = Math.max(800, sequence.length * pointSpacing + 100);
+            sequenceContent.style.width = `${contentWidth}px`;
+            
+            // Add grid lines (for numbers 2-12)
+            const sequenceGrid = document.createElement('div');
+            sequenceGrid.className = 'sequence-grid';
+            for (let i = 2; i <= 12; i++) {
+                const gridLine = document.createElement('div');
+                gridLine.className = 'grid-line';
+                const yPosition = ((12 - i) / 10) * 100;
+                gridLine.style.top = `${yPosition}%`;
+                sequenceGrid.appendChild(gridLine);
+            }
+            sequenceContent.appendChild(sequenceGrid);
+            
+            // Add sequence points
+            const chartHeight = 210;
+            sequence.forEach((number, index) => {
+                const point = document.createElement('div');
+                point.className = 'sequence-point';
+                point.style.backgroundColor = colors[number - 2];
+                point.textContent = number;
+                point.title = `Press ${index + 1}: Number ${number}`;
+                
+                // Position horizontally based on sequence order
+                const xPosition = 10 + (index * pointSpacing);
+                point.style.left = `${xPosition}px`;
+                
+                // Position vertically based on number value (2 at bottom, 12 at top)
+                const yPosition = chartHeight - ((number - 2) / 10) * (chartHeight - 20) - 18;
+                point.style.top = `${yPosition}px`;
+                
+                sequenceContent.appendChild(point);
+            });
+            
+            sequenceContainer.appendChild(sequenceContent);
+            sequenceChart.innerHTML = '';
+            sequenceChart.appendChild(sequenceContainer);
+            
+            // Smart auto-scroll logic
+            setTimeout(() => {
+                const chartWidth = sequenceChart.clientWidth;
+                const availableWidth = chartWidth - 40; // Account for y-axis labels
+                const lastPointPosition = 10 + ((sequence.length - 1) * pointSpacing) + 16; // +16 for point width
+                
+                // Only start scrolling when the last point would be beyond the visible area
+                if (lastPointPosition > availableWidth) {
+                    // Calculate how much to scroll to keep the latest point near the right edge
+                    const targetScrollLeft = lastPointPosition - availableWidth + 50; // +50 for some padding
+                    sequenceChart.scrollLeft = Math.max(0, targetScrollLeft);
+                } else {
+                    // If everything fits, don't scroll
+                    sequenceChart.scrollLeft = 0;
+                }
+            }, 0);
+        }
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            generateButtons();
+            updateDisplay();
+        });
+    </script>
+</body>
+</html>
