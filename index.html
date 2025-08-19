@@ -57,6 +57,15 @@
             background-color: #d4edda;
         }
 
+        .number-group.has-count {
+            background-color: var(--frequency-color);
+            border-color: var(--frequency-border);
+        }
+
+        .number-group.has-count:hover {
+            background-color: var(--frequency-hover);
+        }
+
         .number-label {
             font-size: 32px;
             font-weight: bold;
@@ -326,7 +335,7 @@
             </div>
 
             <div class="chart-container">
-                <div class="chart-title">Sequence - Press Order (Time →, Value ↑)</div>
+                <div class="chart-title">Sequence - Press Order (Time â, Value â)</div>
                 <div class="sequence-chart" id="sequenceChart">
                     <div class="sequence-empty">No presses yet</div>
                 </div>
@@ -339,9 +348,17 @@
         let counts = {};
         let sequence = [];
         const colors = [
-            '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
-            '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9',
-            '#F8C471', '#82E0AA'
+            '#2E7D32', // 2 - Dark green
+            '#388E3C', // 3 - Medium-dark green
+            '#43A047', // 4 - Medium green
+            '#66BB6A', // 5 - Light green
+            '#81C784', // 6 - Lighter green
+            '#A5D6A7', // 7 - Very light green
+            '#FFE082', // 8 - Light yellow
+            '#FFCC02', // 9 - Yellow
+            '#FF9800', // 10 - Orange
+            '#FF5722', // 11 - Red-orange
+            '#D32F2F'  // 12 - Red
         ];
 
         // Initialize data for numbers 2-12
@@ -361,7 +378,7 @@
                 numberGroup.innerHTML = `
                     <div class="number-label">${i}</div>
                     <div class="count-display" id="count-${i}">0</div>
-                    <button class="remove-btn" id="remove-${i}" onclick="event.stopPropagation(); removeCount(${i})" disabled>−</button>
+                    <button class="remove-btn" id="remove-${i}" onclick="event.stopPropagation(); removeCount(${i})" disabled>â</button>
                 `;
                 
                 buttonsSection.appendChild(numberGroup);
@@ -406,11 +423,103 @@
             updateSequenceChart();
         }
 
-        // Update count displays and button states
+         // Update count displays and button states
         function updateCountDisplays() {
+            // Calculate total count and max count for relative frequency
+            const totalCount = Object.values(counts).reduce((sum, count) => sum + count, 0);
+            const maxCount = Math.max(...Object.values(counts), 1);
+            
             for (let i = 2; i <= 12; i++) {
-                document.getElementById(`count-${i}`).textContent = counts[i];
-                document.getElementById(`remove-${i}`).disabled = counts[i] === 0;
+                const countElement = document.getElementById(`count-${i}`);
+                const removeButton = document.getElementById(`remove-${i}`);
+                const numberGroup = countElement.closest('.number-group');
+                
+                // Update count display
+                countElement.textContent = counts[i];
+                
+                // Update remove button state
+                removeButton.disabled = counts[i] === 0;
+                
+                // Update background color based on relative frequency
+                if (counts[i] > 0 && totalCount > 0) {
+                    // Calculate relative frequency (0 to 1)
+                    const relativeFreq = counts[i] / maxCount;
+                    
+                    // Get the base color for this number
+                    const baseColor = colors[i - 2];
+                    
+                    // Convert hex to HSL for better color manipulation
+                    const r = parseInt(baseColor.slice(1, 3), 16) / 255;
+                    const g = parseInt(baseColor.slice(3, 5), 16) / 255;
+                    const b = parseInt(baseColor.slice(5, 7), 16) / 255;
+                    
+                    const max = Math.max(r, g, b);
+                    const min = Math.min(r, g, b);
+                    let h, s, l = (max + min) / 2;
+                    
+                    if (max === min) {
+                        h = s = 0;
+                    } else {
+                        const d = max - min;
+                        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                        switch (max) {
+                            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                            case g: h = (b - r) / d + 2; break;
+                            case b: h = (r - g) / d + 4; break;
+                        }
+                        h /= 6;
+                    }
+                    
+                    // Adjust lightness based on frequency
+                    // Low frequency = lighter (pastel), High frequency = darker (rich)
+                    const targetLightness = 0.85 - (relativeFreq * 0.35); // Range from 0.85 (light) to 0.5 (medium-dark)
+                    
+                    // Convert back to RGB
+                    const hslToRgb = (h, s, l) => {
+                        let r, g, b;
+                        if (s === 0) {
+                            r = g = b = l;
+                        } else {
+                            const hue2rgb = (p, q, t) => {
+                                if (t < 0) t += 1;
+                                if (t > 1) t -= 1;
+                                if (t < 1/6) return p + (q - p) * 6 * t;
+                                if (t < 1/2) return q;
+                                if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                                return p;
+                            };
+                            const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                            const p = 2 * l - q;
+                            r = hue2rgb(p, q, h + 1/3);
+                            g = hue2rgb(p, q, h);
+                            b = hue2rgb(p, q, h - 1/3);
+                        }
+                        return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+                    };
+                    
+                    const [newR, newG, newB] = hslToRgb(h, s, targetLightness);
+                    const backgroundColor = `rgb(${newR}, ${newG}, ${newB})`;
+                    
+                    // Create border color (slightly darker)
+                    const [borderR, borderG, borderB] = hslToRgb(h, s, Math.max(targetLightness - 0.1, 0.3));
+                    const borderColor = `rgb(${borderR}, ${borderG}, ${borderB})`;
+                    
+                    // Create hover color (slightly lighter)
+                    const [hoverR, hoverG, hoverB] = hslToRgb(h, s, Math.min(targetLightness + 0.05, 0.9));
+                    const hoverColor = `rgb(${hoverR}, ${hoverG}, ${hoverB})`;
+                    
+                    // Apply colors using CSS custom properties
+                    numberGroup.style.setProperty('--frequency-color', backgroundColor);
+                    numberGroup.style.setProperty('--frequency-border', borderColor);
+                    numberGroup.style.setProperty('--frequency-hover', hoverColor);
+                    numberGroup.classList.add('has-count');
+                } else {
+                    // Reset to default appearance for numbers with no count
+                    numberGroup.classList.remove('has-count');
+                    numberGroup.style.removeProperty('--frequency-color');
+                    numberGroup.style.removeProperty('--frequency-border');
+                    numberGroup.style.removeProperty('--frequency-hover');
+                }
             }
         }
 
